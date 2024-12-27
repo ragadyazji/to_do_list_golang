@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -35,73 +36,64 @@ func (tl *TaskList) String() string {
 	return b.String()
 }
 
-var tasks TaskList
-
-func show() {
-	fmt.Println(tasks.String())
+func show(w io.Writer, tasks *TaskList) {
+	fmt.Fprintln(w, tasks.String())
 }
 
-func add() {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Enter a task:")
+func add(w io.Writer, r io.Reader, tasks *TaskList) {
+	reader := bufio.NewReader(r)
+	fmt.Fprintln(w, "Enter a task:")
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
 	newTask := Task{
 		description: input,
 		completed:   false,
 	}
-	tasks = append(tasks, newTask)
-	fmt.Println(tasks.String())
+	*tasks = append(*tasks, newTask)
+	fmt.Fprintln(w, tasks.String())
 }
 
-func mark() {
+func mark(w io.Writer, r io.Reader, tasks *TaskList) {
 	var i int
-	fmt.Println("Select the task you want to mark as completed")
-	fmt.Println(tasks)
-	fmt.Scan(&i)
+	fmt.Fprintln(w, "Select the task you want to mark as completed")
+	fmt.Fprintln(w, tasks)
+	fmt.Fscan(r, &i)
 	var s int
-	//var strikethroughText string
-	if i > len(tasks) {
-		fmt.Println("choose a number from 1 to", len(tasks))
-		fmt.Scan(&s)
+	if i > len(*tasks) {
+		fmt.Fprintln(w, "choose a number from 1 to", len(*tasks))
+		fmt.Fscan(r, &s)
 		s = s - 1
-		// fmt.Println("\x1b[9m" + tasks[s] + "\x1b[0m")
-		//tasks[s] = applyStrikethrough(tasks[s])
-		fmt.Println(tasks.String())
+		fmt.Fprintln(w, tasks.String())
 	} else {
 		s = s - 1
-		//tasks[s] = applyStrikethrough(tasks[s])
-		fmt.Println(tasks.String())
+		fmt.Fprintln(w, tasks.String())
 	}
 }
 
-// func applyStrikethrough(text string) string {
-// 	result := ""
-// 	for _, r := range text {
-// 		result += string(r) + "\u0336"
-// 	}
-// 	return result
-// }
-
-func main() {
+func execute(tasks *TaskList) {
 	var i int
 	fmt.Println("select an option by the number: \n1. show tasks (completed and uncompleted)\n2. add task\n3. mark tast complete\n4. quit")
 	fmt.Scan(&i)
 	switch i {
 	case 1:
 		fmt.Println("You want to see your tasks")
-		show()
+		show(os.Stdout, tasks)
 	case 2:
 		fmt.Println("You want to add a task")
-		add()
+		add(os.Stdout, os.Stdin, tasks)
 	case 3:
 		fmt.Println("You want to mark a task")
-		mark()
+		mark(os.Stdout, os.Stdin, tasks)
 	case 4:
 		fmt.Println("You want to quit")
-		break
 	default:
 		fmt.Println("Choose between 1-4")
 	}
-	main()
+}
+
+func main() {
+	var tasks TaskList
+	for {
+		execute(&tasks)
+	}
 }
