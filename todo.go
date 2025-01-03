@@ -40,17 +40,21 @@ func show(w io.Writer, tasks *TaskList) {
 	fmt.Fprintln(w, tasks.String())
 }
 
-func add(w io.Writer, r io.Reader, tasks *TaskList) {
+func add(w io.Writer, r io.Reader, tasks *TaskList) error {
 	reader := bufio.NewReader(r)
 	fmt.Fprintln(w, "Enter a task:")
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
+	if input == "" {
+		return fmt.Errorf("you can't add an empty task")
+	}
 	newTask := Task{
 		description: input,
 		completed:   false,
 	}
 	*tasks = append(*tasks, newTask)
 	fmt.Fprintln(w, tasks.String())
+	return nil
 }
 
 func mark(w io.Writer, r io.Reader, tasks *TaskList) {
@@ -80,7 +84,10 @@ func execute(tasks *TaskList) {
 		show(os.Stdout, tasks)
 	case 2:
 		fmt.Println("You want to add a task")
-		add(os.Stdout, os.Stdin, tasks)
+		addError := add(os.Stdout, os.Stdin, tasks)
+		if addError != nil {
+			fmt.Fprintln(os.Stderr, addError)
+		}
 	case 3:
 		fmt.Println("You want to mark a task")
 		mark(os.Stdout, os.Stdin, tasks)
